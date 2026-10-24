@@ -43,6 +43,7 @@
 #include "cfg.h"
 #include "usbinterface.h"
 #include "sgb.h"
+#include "epsonrtc.h"
 #include "version.h"
 #include "hwinfo.h"
 
@@ -111,7 +112,8 @@ void prepare_reset() {
   delay_ms(SNES_RESET_PULSELEN_MS);
   if(romprops.sramsize_bytes && fpga_test() == FPGA_TEST_TOKEN) {
     writeled(1);
-    save_srm(file_lfn, romprops.ramsize_bytes, SRAM_SAVE_ADDR);
+    epsonrtc_update();
+    save_srm(file_lfn, srm_size(), SRAM_SAVE_ADDR);
     writeled(0);
   }
   // don't save SGB RTC since we are in reset and it may be undefined
@@ -289,6 +291,12 @@ uint8_t snes_main_loop() {
   /* save the GB RTC if enabled */
   sgb_gtc_save(file_lfn);
 
+  /* the game set the Epson RTC: save it with the SaveRAM once things settle */
+  if(epsonrtc_update()) {
+    diffcount = 1;
+    samecount = 0;
+  }
+
   if(romprops.sramsize_bytes && CFG.enable_autosave) {
     uint32_t crc_bytes = min(romprops.sramsize_bytes - saveram_offset, SRAM_REGION_SIZE);
     saveram_crc = calc_sram_crc(SRAM_SAVE_ADDR + romprops.srambase + saveram_offset, crc_bytes, saveram_crc);
@@ -312,7 +320,7 @@ uint8_t snes_main_loop() {
         if(diffcount>=1 && samecount==5) {
           printf("SaveRAM CRC: 0x%04lx; saving %s\n", saveram_crc, file_lfn);
           writeled(1);
-          save_srm(file_lfn, romprops.ramsize_bytes, SRAM_SAVE_ADDR);
+          save_srm(file_lfn, srm_size(), SRAM_SAVE_ADDR);
           last_save_failed = save_failed;
           save_failed = file_res ? 1 : 0;
           didnotsave = save_failed ? 25 : 0;
@@ -322,7 +330,7 @@ uint8_t snes_main_loop() {
           printf("periodic save (sram contents keep changing or previous save failed)\n");
           diffcount=0;
           writeled(1);
-          save_srm(file_lfn, romprops.ramsize_bytes, SRAM_SAVE_ADDR);
+          save_srm(file_lfn, srm_size(), SRAM_SAVE_ADDR);
           last_save_failed = save_failed;
           save_failed = file_res ? 1 : 0;
           didnotsave = save_failed ? 25 : 0;

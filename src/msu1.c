@@ -52,7 +52,7 @@ void save_during_msu_shortreset(void) {
   delay_ms(1);
   if(romprops.ramsize_bytes && fpga_test() == FPGA_TEST_TOKEN) {
     writeled(1);
-    save_srm(file_lfn, romprops.ramsize_bytes, SRAM_SAVE_ADDR);
+    save_srm(file_lfn, srm_size(), SRAM_SAVE_ADDR);
     writeled(0);
   }
   snes_reset(0);
@@ -78,7 +78,7 @@ void msu_savecheck(int immediate) {
     currentcrc = calc_sram_crc(SRAM_SAVE_ADDR + romprops.srambase, romprops.sramsize_bytes, 0);
     if(msu_last_crc != currentcrc) {
       writeled(1);
-      save_srm(file_lfn, romprops.ramsize_bytes, SRAM_SAVE_ADDR);
+      save_srm(file_lfn, srm_size(), SRAM_SAVE_ADDR);
       writeled(0);
       msu_last_crc = currentcrc;
     }

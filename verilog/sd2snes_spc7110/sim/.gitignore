@@ -1,0 +1,10 @@
+ref/
+gen
+dec_trace
+*.vvp
+*.hex
+ref_*.txt
+rtl_*.txt
+gen_rtc
+ops.txt
+ops_rtc.txt

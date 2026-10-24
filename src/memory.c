@@ -50,6 +50,7 @@ memory.c: RAM operations
 #include "rtc.h"
 #include "savestate.h"
 #include "sgb.h"
+#include "epsonrtc.h"
 
 #include <string.h>
 char* hex = "0123456789ABCDEF";
@@ -441,7 +442,9 @@ uint32_t load_rom(uint8_t* filename, uint32_t base_addr, uint8_t flags) {
     if(romprops.ramsize_bytes) {
       // powerslide relies on the init value to be 00.
       sram_memset(SRAM_SAVE_ADDR, romprops.ramsize_bytes, romprops.has_gsu ? 0x00 : 0xFF);
+      epsonrtc_clear();
       if (romprops.sramsize_bytes) migrate_and_load_srm(filename, SRAM_SAVE_ADDR);
+      epsonrtc_load();
       /* file not found error is ok (SRM file might not exist yet) */
       if(file_res == FR_NO_FILE) file_res = 0;
       saveram_crc_old = calc_sram_crc(SRAM_SAVE_ADDR + romprops.srambase, romprops.sramsize_bytes, 0);
@@ -453,6 +456,12 @@ uint32_t load_rom(uint8_t* filename, uint32_t base_addr, uint8_t flags) {
   }
 
   printf("check MSU...");
+#ifdef CONFIG_MK2
+  /* the Mk2 SPC7110 core has no MSU-1 (no room in the XC3S400) */
+  if(romprops.fpga_conf == FPGA_SPC7110) {
+    romprops.has_msu1 = 0;
+  } else
+#endif
   if(msu1_check(filename)) {
     romprops.fpga_features |= FEAT_MSU1;
     romprops.has_msu1 = 1;
@@ -758,6 +767,10 @@ uint32_t load_bootrle(uint32_t base_addr) {
   }
   FPGA_DESELECT();
   return (uint32_t)filesize;
+}
+
+uint32_t srm_size() {
+  return romprops.ramsize_bytes + epsonrtc_srm_bytes();
 }
 
 void save_srm(uint8_t* filename, uint32_t sram_size, uint32_t base_addr) {

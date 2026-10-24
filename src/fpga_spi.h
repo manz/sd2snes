@@ -103,6 +103,8 @@
 #define FPGA_CMD_MSUGETVOLUME    (0xf4)
 #define FPGA_CMD_MSUREAD         (0xf5)
 #define FPGA_CMD_MSUGETSCADDR    (0xf6)
+#define FPGA_CMD_RTCSTATESET     (0xf7) /* SPC7110 core only */
+#define FPGA_CMD_RTCSTATEGET     (0xf8) /* SPC7110 core only */
 #define FPGA_CMD_CONFIG_READ     (0xf9)
 #define FPGA_CMD_CONFIG_WRITE    (0xfa)
 #define FPGA_CMD_GETSYSCLK       (0xfe)
@@ -133,6 +135,8 @@ uint32_t get_msu_offset(void);
 uint32_t get_snes_sysclk(void);
 void set_fpga_time(uint64_t time);
 uint64_t get_fpga_time(void);
+void fpga_set_epsonrtc_state(const uint8_t *state);
+uint8_t fpga_get_epsonrtc_state(uint8_t *state);
 void set_bsx_regs(uint8_t set, uint8_t reset);
 void fpga_reset_srtc_state(void);
 void fpga_reset_dspx_addr(void);

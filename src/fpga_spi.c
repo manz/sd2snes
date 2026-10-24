@@ -78,6 +78,8 @@
         E5        tt{7}         set RTC (SPC7110 format + 1000s of year,
                                          nibbles packed)
                                 eg 0x20111210094816 is 2011-12-10, 9:48:16
+                                (SPC7110 core: the 1000s of year digit holds
+                                 the weekday instead, 0=Sunday)
         E6        ssrr          set/reset BS-X status register [7:0]
         E7        -             reset SRTC state
         E8        -             reset DSP program and data ROM write pointers
@@ -100,6 +102,12 @@
         F2        -             get MSU data address (32bit, MSB first)
         F3        -             get MSU audio track no. (16bit, MSB first)
         F4        -             get MSU volume (8bit)
+
+        F7        ss{8}xx       load Epson RTC state (SPC7110 core only,
+                                bsnes save layout, byte 0 first)
+        F8        xx            get Epson RTC state (SPC7110 core only):
+                                {7'b0, dirty} then 8 bytes, byte 0 first;
+                                dirty = SNES wrote the RTC since last F8
 
         FE        -             get SNES master clock frequency (32bit, MSB first)
                                 measured 1x/sec
@@ -391,6 +399,25 @@ void set_fpga_time(uint64_t time) {
   FPGA_TX_BYTE(time & 0xff);
   FPGA_TX_BYTE(0x00);
   FPGA_DESELECT();
+}
+
+void fpga_set_epsonrtc_state(const uint8_t *state) {
+  FPGA_SELECT();
+  FPGA_TX_BYTE(FPGA_CMD_RTCSTATESET);
+  for(int i = 0; i < 8; i++) FPGA_TX_BYTE(state[i]);
+  FPGA_TX_BYTE(0x00);
+  FPGA_DESELECT();
+}
+
+/* returns 1 if the SNES wrote to the RTC since the last call */
+uint8_t fpga_get_epsonrtc_state(uint8_t *state) {
+  FPGA_SELECT();
+  FPGA_TX_BYTE(FPGA_CMD_RTCSTATEGET);
+  FPGA_TX_BYTE(0x00); /* dummy (latch state, clear dirty flag) */
+  uint8_t dirty = FPGA_RX_BYTE() & 1;
+  for(int i = 0; i < 8; i++) state[i] = FPGA_RX_BYTE();
+  FPGA_DESELECT();
+  return dirty;
 }
 
 void fpga_reset_srtc_state() {
