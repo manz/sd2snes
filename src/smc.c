@@ -263,10 +263,12 @@ void smc_id(snes_romprops_t* props, uint32_t file_offset) {
     case 0x2a: /* SPC7110 */
       if(header->carttype == 0xf5 || header->carttype == 0xf9) {
         props->has_spc7110 = 1;
-        props->error = MENU_ERR_NOIMPL;
-        props->error_param = (uint8_t*)"SPC7110";
         props->fpga_conf = FPGA_SPC7110;
         props->mapper_id = 5;
+        /* 0xf9: with Epson RTC-4513 (the SPC7110 core reuses the SRTC feature bit) */
+        if(header->carttype == 0xf9) {
+          props->fpga_features |= FEAT_SRTC;
+        }
       }
       break;
 

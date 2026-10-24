@@ -453,6 +453,12 @@ uint32_t load_rom(uint8_t* filename, uint32_t base_addr, uint8_t flags) {
   }
 
   printf("check MSU...");
+#ifdef CONFIG_MK2
+  /* the Mk2 SPC7110 core has no MSU-1 (no room in the XC3S400) */
+  if(romprops.fpga_conf == FPGA_SPC7110) {
+    romprops.has_msu1 = 0;
+  } else
+#endif
   if(msu1_check(filename)) {
     romprops.fpga_features |= FEAT_MSU1;
     romprops.has_msu1 = 1;

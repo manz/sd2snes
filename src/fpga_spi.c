@@ -78,6 +78,8 @@
         E5        tt{7}         set RTC (SPC7110 format + 1000s of year,
                                          nibbles packed)
                                 eg 0x20111210094816 is 2011-12-10, 9:48:16
+                                (SPC7110 core: the 1000s of year digit holds
+                                 the weekday instead, 0=Sunday)
         E6        ssrr          set/reset BS-X status register [7:0]
         E7        -             reset SRTC state
         E8        -             reset DSP program and data ROM write pointers
